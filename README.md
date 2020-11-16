@@ -1,4 +1,4 @@
-# gshop
+# vue-eleme-client
 
 > A Vue.js project
 
