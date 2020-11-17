@@ -1,12 +1,10 @@
 <template>
   <div class="profile">
-    <header class="header">
-      <a class="header_title">
-        <span class="header_title_text">我的</span>
-      </a>
-    </header>
+    <header-top title="我的"/>
     <section class="profile-number">
-      <a href="javascript:" class="profile-link">
+        <!--使用router-link代替a标签-->
+        <router-link to="/login" class="profile-link">
+<!--      <a href="javascript:" @click="goToLogin" class="profile-link">-->
         <div class="profile_image">
           <i class="iconfont icon-person"></i>
         </div>
@@ -22,7 +20,8 @@
         <span class="arrow">
               <i class="iconfont icon-jiantou1"></i>
             </span>
-      </a>
+<!--      </a>-->
+        </router-link>
     </section>
     <section class="profile_info_data border-1px">
       <ul class="info_data_list">
@@ -96,13 +95,24 @@
 </template>
 
 <script>
-export default {}
+  import HeaderTop from '../../components/HeaderTop/HeaderTop'
+  export default {
+    components:{
+      HeaderTop
+    },
+    methods:{
+      goToLogin(){
+        this.$router.replace('/login')
+      }
+    }
+  }
 </script>
 
 <style lang="stylus" rel="stylesheet/stylus">
   @import "../../common/stylus/mixins.styl"
   .profile //我的
     width 100%
+    overflow hidden
     .header
       background-color #02a774
       position fixed
