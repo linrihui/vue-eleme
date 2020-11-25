@@ -2,45 +2,45 @@
   <div>
     <div class="shopcart">
       <div class="content">
-        <div class="content-left">
+        <div class="content-left" @click="toggleShow">
           <div class="logo-wrapper">
-            <div class="logo highlight">
-              <i class="iconfont icon-shopping_cart highlight"></i>
+            <div class="logo" :class="{highlight: totalCount}">
+              <i class="iconfont icon-shopping_cart" :class="{highlight: totalCount}"></i>
             </div>
-            <div class="num">1</div>
+            <div class="num" v-if="totalCount">{{totalCount}}</div>
           </div>
-          <div class="price highlight">￥10</div>
-          <div class="desc">另需配送费￥4 元</div>
+          <div class="price" :class="{highlight: totalCount}">￥{{totalPrice}}</div>
+          <div class="desc">另需配送费￥{{info.deliveryPrice}} 元</div>
         </div>
         <div class="content-right">
-          <div class="pay not-enough">
-            还差￥10 元起送
+          <div class="pay" :class="payClass">
+            {{payText}}
           </div>
         </div>
       </div>
-      <div class="shopcart-list" style="display: none;">
-        <div class="list-header">
-          <h1 class="title">购物车</h1>
-          <span class="empty">清空</span>
-        </div>
-        <div class="list-content">
-          <ul>
-            <li class="food">
-              <span class="name">红枣山药糙米粥</span>
-              <div class="price"><span>￥10</span></div>
-              <div class="cartcontrol-wrapper">
-                <div class="cartcontrol">
-                  <div class="iconfont icon-remove_circle_outline"></div>
-                  <div class="cart-count">1</div>
-                  <div class="iconfont icon-add_circle"></div>
+      <transition name="move">
+        <div class="shopcart-list" v-show="listShow">
+          <div class="list-header">
+            <h1 class="title">购物车</h1>
+            <span class="empty" @click="clearCart">清空</span>
+          </div>
+          <div class="list-content">
+            <ul>
+              <li class="food" v-for="(food,index) in cartFoods" :key="index">
+                <span class="name">{{food.name}}</span>
+                <div class="price"><span>￥{{food.price}}</span></div>
+                <div class="cartcontrol-wrapper">
+                  <div class="cartcontrol">
+                    <cart-control :food="food"/>
+                  </div>
                 </div>
-              </div>
-            </li>
-          </ul>
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
+      </transition>
     </div>
-    <div class="list-mask" style="display: none;"></div>
+    <div class="list-mask" v-show="listShow" @click="toggleShow"></div>
   </div>
 </template>
 
@@ -48,23 +48,74 @@
   import { MessageBox } from 'mint-ui'
   import BScroll from 'better-scroll'
   import {mapState, mapGetters} from 'vuex'
-  import CartControl from '../CartControl/CartControl.vue'
+  import CartControl from '../CartControl/CartControl'
 
   export default {
     data () {
       return {
+        isShow:false
       }
     },
 
     computed: {
       ...mapState(['cartFoods','info']),
-      ...mapGetters(['totalCount','totalPrice'])
+      ...mapGetters(['totalCount','totalPrice']),
+      payClass(){
+        const {totalPrice} = this
+        const {minPrice} = this.info
+        return totalPrice>=minPrice?'enough':'nont-enough'
+      },
+      payText(){
+        const {totalPrice} = this
+        const {minPrice} = this.info
+        if(totalPrice === 0){
+          return `￥${minPrice}元起送`
+        }else if(totalPrice<minPrice){
+          return `还差￥${minPrice-totalPrice}元起送`
+        }else{
+          return '结算'
+        }
+      },
+      listShow(){
+        // 如果总数量为0，不显示
+        if(this.totalCount === 0){
+          this.isShow = false
+          return false
+        }
+
+        if(this.isShow){
+          this.$nextTick(()=>{
+            // 实现BScroll的实例是个单例
+            if(!this.scroll){
+              this.scroll = new BScroll('.list-content',{
+                click:true
+              })
+            }else {
+              this.scroll.refresh() // 重新统计内容的高度，判断是否形成滚动条
+            }
+          })
+        }
+
+        return this.isShow
+      }
     },
 
 
     methods: {
+      toggleShow(){
+        if(this.totalCount>0){
+          this.isShow = !this.isShow
+        }
+      },
+
+      clearCart(){
+        MessageBox.confirm('确定清空购物车吗？').then(action => {
+          this.$store.dispatch('clearCart')
+        })
+      }
     },
     components: {
+      CartControl
     }
   }
 </script>
@@ -180,7 +231,7 @@
       width 100%
       transform translateY(-100%)
       &.move-enter-active, &.move-leave-active
-        transition transform .3s
+        transition  transform .3s
       &.move-enter, &.move-leave-to
         transform translateY(0)
       .list-header
